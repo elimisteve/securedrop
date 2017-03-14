@@ -183,14 +183,14 @@ class TestJournalistApp(TestCase):
             data=dict(username=self.user.username, is_admin=False,
                       password='valid', password_again='valid'))
 
-        self.assertIn('Password successfully changed', resp.data)
+        self.assertMessageFlashed("Account successfully updated!", 'success')
 
     def test_user_edits_password_success_reponse(self):
         self._login_user()
         resp = self.client.post(url_for('edit_account'),
                                 data=dict(password='valid',
                                           password_again='valid'))
-        self.assertIn("Password successfully changed", resp.data)
+        self.assertMessageFlashed("Account successfully updated!", 'success')
 
     def test_admin_edits_user_password_mismatch_warning(self):
         self._login_admin()
@@ -201,7 +201,7 @@ class TestJournalistApp(TestCase):
                       password='not', password_again='thesame'),
             follow_redirects=True)
 
-        self.assertIn(escape("Passwords didn't match"), resp.data)
+        self.assertMessageFlashed("Passwords didn't match!", "error")
 
     def test_user_edits_password_mismatch_redirect(self):
         self._login_user()
@@ -239,7 +239,9 @@ class TestJournalistApp(TestCase):
                       password_again=overly_long_password),
             follow_redirects=True)
 
-        self.assertIn('Your password is too long', resp.data)
+        self.assertMessageFlashed('Password must be less than {} '
+                                  'characters!'.format(
+                                      Journalist.MAX_PASSWORD_LEN), 'error')
 
     def test_user_edits_password_too_long_warning(self):
         self._login_user()
@@ -250,7 +252,9 @@ class TestJournalistApp(TestCase):
                                           password_again=overly_long_password),
                                 follow_redirects=True)
 
-        self.assertIn('Your password is too long', resp.data)
+        self.assertMessageFlashed('Password must be less than {} '
+                                  'characters!'.format(
+                                      Journalist.MAX_PASSWORD_LEN), 'error')
 
     def test_admin_add_user_password_too_long_warning(self):
         self._login_admin()
@@ -274,8 +278,8 @@ class TestJournalistApp(TestCase):
             data=dict(username=new_username, is_admin=False,
                       password='', password_again=''))
 
-        self.assertIn('Username {} is already taken'.format(new_username),
-                      resp.data)
+        self.assertMessageFlashed('Username "{}" is already taken!'.format(
+            new_username), 'error')
 
     def test_admin_resets_user_hotp(self):
         self._login_admin()
@@ -438,14 +442,16 @@ class TestJournalistApp(TestCase):
             password_again=overly_long_password),
             follow_redirects=True)
 
-        self.assertIn('Your password is too long', res.data)
+        self.assertMessageFlashed('Password must be less than {} '
+                                  'characters!'.format(
+                                      Journalist.MAX_PASSWORD_LEN), 'error')
 
     def test_valid_user_password_change(self):
         self._login_user()
         res = self.client.post(url_for('edit_account'), data=dict(
             password='valid',
             password_again='valid'))
-        self.assertIn("Password successfully changed", res.data)
+        self.assertMessageFlashed("Account successfully updated!", 'success')
 
     def test_regenerate_totp(self):
         self._login_user()
